@@ -1,68 +1,80 @@
-# Pyramid
+# Pyramid AI — Private On-Device Codebase Assistant
 
-Pyramid is an offline Python codebase analyzer that indexes source files, embeds code chunks, and serves a semantic search endpoint.
+Pyramid AI is a **100% private, offline, on-device codebase assistant** that allows you to semantically search and ask questions about your codebase. 
 
-## Overview
+The application utilizes a local backend for directory loading/parsing and runs an LLM directly in the user's browser via **WebGPU**, guaranteeing that **no code or prompts ever leave your machine.**
 
-Pyramid walks a Python repository, extracts functions, classes, and method definitions using Tree-sitter, splits large code blocks into manageable chunks, computes embeddings with a local transformer model, and stores those embeddings in a FAISS index. It provides a FastAPI search endpoint for retrieving relevant code snippets given a natural language query.
+---
 
-## Features
+## 🚀 Key Features
 
-- Recursive scanning of Python files while excluding common virtual environment and metadata directories
-- Syntax-aware chunking of functions, classes, decorated definitions, and methods
-- Automatic splitting of large code blocks into smaller chunks with overlap
-- Local model embedding using `transformers`
-- Nearest-neighbor search via FAISS
-- FastAPI endpoint for query search results
+* **On-Device Browser LLM:** Executes local quantized models (`onnx-community/Qwen2.5-0.5B-Instruct` via WebGPU) inside your browser. No API keys, no network queries, completely offline-first.
+* **Semantic Vector Search:** Integrates a local FastAPI indexer that splits python files into chunks using Tree-sitter, embeds them using a local `Semantic-CodeBERT` model, and runs fast similarity matching using FAISS.
+* **Privacy-First:** Secure sandbox. Absolute code privacy since all processing happens directly on your local GPU/CPU.
+* **Sleek UI:** Modern Next.js interface with high-fidelity dark mode, real-time local model status reporting (GPU active state, local model caching progress), and highlighted code context panels.
 
-## Project Structure
+---
 
-- `app/main.py` - FastAPI app and startup lifecycle that indexes the codebase
-- `app/codebase_indexer.py` - Finds Python files and orchestrates chunking, embedding and indexing
-- `app/chunker.py` - Uses Tree-sitter to parse Python source and produce indexed code chunks
-- `app/embedder.py` - Wraps a local transformer model for code and query embeddings
-- `app/indexer.py` - Builds and queries a FAISS index
-- `app/models.py` - Pydantic request/response models
+## 📁 Project Structure
 
-## Installation
+* **`pyramid-next/` (Frontend):** Next.js single-page web app. Performs local WebGPU model loading and response streaming.
+* **`app/` (Backend):** Python FastAPI server.
+  * `app/main.py` - FastAPI app, endpoints, and file upload validation.
+  * `app/codebase_indexer.py` - Manages directory scans and orchestrates embedding generation.
+  * `app/chunker.py` - Tree-sitter syntax-aware parser (extracts classes/functions).
+  * `app/embedder.py` - Evaluates embeddings locally via CodeBERT.
+  * `app/indexer.py` - Handles local FAISS indexes.
+* **`download_model.py`:** Pre-downloads the local embedding model files.
+* **`LICENSE`:** MIT open-source license.
 
-1. Create a Python virtual environment.
-2. Install the dependencies required by the app. Example:
+---
 
+## 🛠️ Installation & Setup
+
+### 1. Prerequisite: Download Local Embedding Model
+From the repository root directory, run the helper script to cache the CodeBERT embedding weights locally:
 ```bash
+python download_model.py
+```
+
+### 2. Run the Local Backend (FastAPI)
+Create a Python virtual environment, install requirements, and boot up the server:
+```bash
+# 1. Create and active virtual environment
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+
+# 2. Install dependencies
 pip install -r requirements.txt
+
+# 3. Start the FastAPI API server
+python -m uvicorn app.main:app --reload
 ```
+The local server will run on `http://localhost:8000`.
 
-3. Make sure a local transformer model exists at `./model` or update `MODEL_NAME` in `app/main.py` and `app/embedder.py`.
-
-## Usage
-
-Set the codebase path and run the FastAPI app with Uvicorn:
-
+### 3. Run the Frontend (Next.js)
+Open a new terminal session, navigate to the `pyramid-next` folder, install Node packages, and run the developer server:
 ```bash
-CODEBASE_PATH=/path/to/repo uvicorn app.main:app --reload
+cd pyramid-next
+npm install
+npm run dev
 ```
+Open **[http://localhost:3000](http://localhost:3000)** in your WebGPU-compatible browser (e.g. Google Chrome or Microsoft Edge version 113+).
 
-Then send a POST request to `/search` with a JSON body:
+---
 
-```json
-{
-  "query": "find the function that parses config files"
-}
-```
+## 🤝 Third-Party Attributions
 
-The endpoint returns a list of matching code chunks with metadata and similarity scores.
+We thank and attribute the following open-source projects that make Pyramid AI possible:
+* **LLM Engine:** [@huggingface/transformers](https://github.com/huggingface/transformers.js) and ONNX Runtime Web for local WebGPU inference.
+* **Chat Model:** [Qwen2.5-0.5B-Instruct-ONNX](https://huggingface.co/onnx-community/Qwen2.5-0.5B-Instruct) by the Qwen Team.
+* **Embedding Model:** [Semantic-CodeBERT](https://huggingface.co/Aakash1001/Semantic-CodeBERT) by Aakash.
+* **Code Parsing:** [Tree-sitter Python parser](https://github.com/tree-sitter/tree-sitter-python) by GitHub.
+* **Vector Indexing:** [FAISS](https://github.com/facebookresearch/faiss) by Meta's Fundamental AI Research team.
+* **Backend Web Framework:** [FastAPI](https://fastapi.tiangolo.com/) by Sebastián Ramírez.
 
-## Configuration
+---
 
-- `CODEBASE_PATH` - required environment variable pointing to the repository root to index
-- `MODEL_NAME` - local model directory path referenced in `app/main.py` and `app/embedder.py`
-- `TOP_K` - number of search results returned by the API
+## 📄 License
 
-## Notes
-
-- The repository expects a Python codebase and will skip files inside excluded directories such as `.git`, `venv`, `__pycache__`, and others.
-- Large code blocks are split by token count to keep embeddings within a manageable length.
-- This project is designed for offline, local analysis and search rather than remote model APIs.
+This project is open-source and licensed under the **OSI-Compliant MIT License**. See the `LICENSE` file for details.

@@ -10,3 +10,6 @@ class SearchResult(BaseModel):
     function: str | None = None
     code: str
     score: float
+
+class IndexRequest(BaseModel):
+    path: str

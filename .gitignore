@@ -1,0 +1,7 @@
+.venv/
+model/
+__pycache__/
+*.pyc
+.vscode/
+pyramid-next/node_modules/
+pyramid-next/.next/
