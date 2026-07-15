@@ -11,7 +11,13 @@ from transformers import AutoTokenizer
 from .models import SearchRequest, SearchResult, IndexRequest
 from .codebase_indexer import find_python_files, index_codebase
 
-MODEL_NAME = r".\model"  # Path to the local model directory
+
+def get_model_path() -> Path:
+    """Return a filesystem path to the local model directory."""
+    return (Path(__file__).resolve().parent.parent / "model").resolve()
+
+
+MODEL_NAME = str(get_model_path())
 TOP_K = 3  # Fewer snippets = smaller prompt = faster model prefill
 
 
